@@ -1,0 +1,41 @@
+* Introduction
+
+~proxypox~ is my replacement for imgproxy written in Clojure. Mostly a learning experience, but I would like it to replace imgproxy in Alphabet Learning one day if possible.
+
+* deps.edn
+
+I need to brush up on what goes in here. [[https://clojure-doc.org/articles/tutorials/getting_started/][Clojure Guides]] is probably a good help to get started with.
+
+#+begin_src clojure :results output :tangle deps.edn
+  {:paths ["src"]}
+#+end_src
+
+* core.clj
+
+This is just to get a hello world up and running.
+
+#+begin_src clojure :results pp :tangle src/org/yulqen/proxypox/core.clj
+    (ns org.yulqen.proxypox.core)
+
+    (defn -main []
+      (println "Hello,world!"))
+
+    (defn greet
+      "Greet these people"
+      [person1 person2]
+      (str "Hello, " person1 " and " person2 "!"))
+
+    (comment
+      (greet "tobby the lar" "sniggers")
+      )
+
+
+#+end_src
+
+#+RESULTS:
+: nil
+
+
+
+
+
