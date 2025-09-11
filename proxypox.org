@@ -7,33 +7,63 @@
 I need to brush up on what goes in here. [[https://clojure-doc.org/articles/tutorials/getting_started/][Clojure Guides]] is probably a good help to get started with.
 
 #+begin_src clojure :results output :tangle deps.edn
-  {:paths ["src"]}
+  {:paths ["src"]
+   :deps {clj-http/clj-http {:mvn/version "3.13.1"}
+          org.clojure/clojure {:mvn/version "1.12.0"}}
+   }
 #+end_src
+
+#+RESULTS:
+: class clojure.lang.Compiler$CompilerException
 
 * core.clj
 
 This is just to get a hello world up and running.
 
-#+begin_src clojure :results pp :tangle src/org/yulqen/proxypox/core.clj
-    (ns org.yulqen.proxypox.core)
+This is the basic code to get an image from a URL.
 
-    (defn -main []
-      (println "Hello,world!"))
+We want to do this to get an image from S3.
 
-    (defn greet
-      "Greet these people"
-      [person1 person2]
-      (str "Hello, " person1 " and " person2 "!"))
+#+begin_src clojure :results output :tangle src/org/yulqen/proxypox/core.clj
+  (ns org.yulqen.proxypox.core)
 
-    (comment
-      (greet "tobby the lar" "sniggers")
-      )
+  (require '[clj-http.client :as client])
+
+  (import '[javax.imageio ImageIO])
+  (import '[java.io ByteArrayInputStream])
+
+  (defn read-image-from-url [url]
+    (try
+      (let [response (client/get url {:as :byte-array})
+            image-data (:body response)]
+        (ImageIO/read (ByteArrayInputStream. image-data)))
+      (catch Exception e
+        (println "Error reading image: " (.getMessage e))
+        nil)))
 
 
+  (defn -main []
+    (println "Hello,world!"))
 #+end_src
 
+And this is some stuff to test it.
+
+#+begin_src clojure :results output :tangle src/org/yulqen/proxypox/core.clj
+      (def image-url "https://guzzler.alphabetlearning.online/A5ZoW17WYcksx6OpINEVSvzU3zXI4DuzHngzyR-2-7c/f:webp/g:ce/czM6Ly9qbC1yZXNvdXJjZXMvdGh1bWJuYWlscy9BdXR1bW4gd29yZHMgd29yZHNlYXJjaCBDb3ZlciBJbWFnZS5qcGc")
+
+      (def test-image (read-image-from-url image-url))
+
+      (if test-image
+        (println "Successfully read image with dimensions:"
+                 (.getWidth test-image) "x" (.getHeight test-image)))
+#+end_src
+
+
+
+
+
 #+RESULTS:
-: nil
+
 
 
 
