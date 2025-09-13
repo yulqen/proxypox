@@ -1,14 +1,14 @@
 (ns org.yulqen.proxypox.core)
 
-(require '[org.httpkit.client :as hclient])
+(require '[org.httpkit.client :as http])
 
 (import '[javax.imageio ImageIO])
 (import '[java.io ByteArrayInputStream])
 (import '[java.awt Graphics2D AlphaComposite])
 (import '[java.io File])
 
-(defn read-image-using-httpkit [url]
-  (let [response @(hclient/get url {:as :byte-array})]
+(defn read-image-from-url [url]
+  (let [response @(http/get url {:as :byte-array})]
     (if-let [err (:error response)]
       (println "HTTP request failed:" err) ; Or throw an exception
       (if (= 200 (:status response))
@@ -16,15 +16,6 @@
           (ImageIO/read (ByteArrayInputStream. image-data)))
         (println "Request returned non-200 status:" (:status response))))))
 
-
-(defn read-image-from-url [url]
-  (try
-    (let [response (client/get url {:as :byte-array})
-          image-data (:body response)]
-      (ImageIO/read (ByteArrayInputStream. image-data)))
-    (catch Exception e
-      (println "Error reading image: " (.getMessage e))
-      nil)))
 
 (defn -main []
   (println "Hello,world!"))
