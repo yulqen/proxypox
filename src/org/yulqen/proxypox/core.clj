@@ -1,11 +1,11 @@
-(ns org.yulqen.proxypox.core)
-
-(require '[org.httpkit.client :as http])
+(ns org.yulqen.proxypox.core
+  (:require [org.httpkit.client :as http]))
 
 (import '[javax.imageio ImageIO])
 (import '[java.io ByteArrayInputStream])
 (import '[java.awt Graphics2D AlphaComposite])
 (import '[java.io File])
+(import '[java.util Base64])
 
 (defn read-image-from-url [url]
   (let [response @(http/get url {:as :byte-array})]
@@ -46,6 +46,22 @@
         watermarked-image (apply-watermark base-image watermark-image 0 0)]
     (save-image watermarked-image "/tmp/WATERMARKED_IMAGE.png")
     (println "Image with watermark saved!")))
+
+(def object_key "Counting in 5s cards to 50 x7 colours Starfish AL.pdf_006.jpg")
+(def s3_storage_name "jl-resources")
+(def s3_prefix "dev")
+
+(defn test-string-concat []
+  (let [url-string (apply str "s3://" s3_storage_name "/" s3_prefix "/" object_key)]
+    url-string))
+
+(defn encode-url [url]
+  (let [s-enc (.encodeToString (Base64/getEncoder) (.getBytes url))]
+    (println s-enc)))
+
+(defn decode-url [b64-url]
+  (new String (.decode (Base64/getDecoder) b64-url)))
+
 
 (comment
   (defn report-image-size [img-url]
