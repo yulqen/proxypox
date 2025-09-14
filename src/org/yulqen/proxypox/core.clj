@@ -69,7 +69,8 @@
     (try
       (let [decoded-url (decode-url b64-url)]
         (println "Received request for image at:" decoded-url)
-        (wm-image decoded-url "https://placehold.co/200x50/FFFFFF/000000?text=Watermark")
+        ;; (wm-image decoded-url "https://placehold.co/200x50/FFFFFF/000000?text=Watermark")
+        (wm-image decoded-url "https://alphabetlearning.online/static/images/AL_long_logo_black_grey_750.1ec1231fe406.png")
         "Image processing started.")
       (catch Exception e
         (str "Error processing request: " (.getMessage e)))))
