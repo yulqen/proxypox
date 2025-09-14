@@ -5,7 +5,7 @@
             [compojure.route :as route]))
 
 (import '[javax.imageio ImageIO])
-(import '[java.io ByteArrayInputStream])
+(import '[java.io ByteArrayInputStream ByteArrayOutputStream])
 (import '[java.awt Graphics2D AlphaComposite])
 (import '[java.io File])
 (import '[java.util Base64])
@@ -39,6 +39,16 @@
 (defn save-image [image filename]
   (ImageIO/write image "png" (File. filename)))
 
+(defn- just-image [base watermark]
+  "Reads base and watermark images from URLs, applies the watermark, and returns the result as a byte array."
+  (let [base-image (read-image-from-url base)
+        watermark-image (read-image-from-url watermark)]
+    (when (and base-image watermark-image)
+      (let [watermarked-image (apply-watermark base-image watermark-image 0 0)
+            baos (ByteArrayOutputStream.)]
+        (ImageIO/write watermarked-image "png" baos)
+        (.toByteArray baos)))))
+
 (defn wm-image [base watermark]
   (let [base-image (read-image-from-url base)
         watermark-image (read-image-from-url watermark)
@@ -64,16 +74,31 @@
 
 (defroutes app
   (GET "/" [] "<h1>Hello, world</h1>")
+  
   ;; A new route to handle the base64 encoded URL
   (GET "/image/:b64-url" [b64-url]
     (try
       (let [decoded-url (decode-url b64-url)]
         (println "Received request for image at:" decoded-url)
-        ;; (wm-image decoded-url "https://placehold.co/200x50/FFFFFF/000000?text=Watermark")
         (wm-image decoded-url "https://alphabetlearning.online/static/images/AL_long_logo_black_grey_750.1ec1231fe406.png")
         "Image processing started.")
       (catch Exception e
         (str "Error processing request: " (.getMessage e)))))
+  
+  (GET "/image2/:b64-url" [b64-url]
+    (try
+      (let [decoded-url (decode-url b64-url)
+            image-bytes (just-image decoded-url "https://alphabetlearning.online/static/images/AL_long_logo_black_grey_750.1ec1231fe406.png")]
+        (if image-bytes
+          {:status 200
+           :headers {"Content-Type" "image/png"}
+           :body image-bytes}
+          {:status 404
+           :body "Image not found or could not be processed."}))
+      (catch Exception e
+        {:status 500
+         :body (str "Error processing request: " (.getMessage e))})))
+  
   (route/not-found "<h1>Page not found</h1>"))
 
 (defn start-server
