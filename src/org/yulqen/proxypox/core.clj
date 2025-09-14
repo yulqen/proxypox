@@ -39,8 +39,9 @@
 (defn save-image [image filename]
   (ImageIO/write image "png" (File. filename)))
 
-(defn- just-image [base watermark]
+(defn- just-image
   "Reads base and watermark images from URLs, applies the watermark, and returns the result as a byte array."
+  [base watermark]
   (let [base-image (read-image-from-url base)
         watermark-image (read-image-from-url watermark)]
     (when (and base-image watermark-image)
