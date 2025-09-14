@@ -84,11 +84,14 @@
       (println "Server started on port 9000."))))
 
 (defn stop-server []
-  "Stops the HTTP server if it is running."
-  (when-let [s @server-instance]
-    (server/server-stop! s)
+  "Stop the http server gracefully."
+  (when-not (nil? @server-instance)
+    ;; graceful shutdown: wait 100ms for existing requests to be finished
+    ;; :timeout is optional, when no timeout, stop immediately
+    (@server-instance :timeout 100)
     (reset! server-instance nil)
-    (println "Server stopped.")))
+    (println "Stopping server.")))
+
 
 (defn -main []
   (println "Starting the server...")
