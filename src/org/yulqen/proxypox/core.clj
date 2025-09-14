@@ -1,31 +1,30 @@
 (ns org.yulqen.proxypox.core
-  (:require [org.httpkit.client :as http]))
+  (:require [org.httpkit.client :as http]
+            [org.httpkit.server :as server]
+            [compojure.core :refer [defroutes GET]] ; Corrected the syntax for Compojure
+            [compojure.route :as route]))
 
 (import '[javax.imageio ImageIO])
 (import '[java.io ByteArrayInputStream])
 (import '[java.awt Graphics2D AlphaComposite])
 (import '[java.io File])
 (import '[java.util Base64])
+(import '[javax.crypto Mac])
+
+;; This atom will hold the server instance so we can start and stop it.
+;; `defonce` ensures it's only defined once, which is good for REPL usage.
+(defonce server-instance (atom nil))
+
+;; --- Helper functions for image processing, placed before the app definition ---
 
 (defn read-image-from-url [url]
   (let [response @(http/get url {:as :byte-array})]
     (if-let [err (:error response)]
-      (println "HTTP request failed:" err) ; Or throw an exception
+      (println "HTTP request failed:" err)
       (if (= 200 (:status response))
         (let [image-data (:body response)]
           (ImageIO/read (ByteArrayInputStream. image-data)))
         (println "Request returned non-200 status:" (:status response))))))
-
-
-(defn -main []
-  (println "Hello,world!"))
-
-(defn report-image-size [img-url]
-  (let [image (read-image-from-url img-url)]
-    (if image
-      (println "Successfully read image with dimensions:"
-               (.getWidth image) "x" (.getHeight image)))))
-
 
 (defn apply-watermark [base-image watermark-image x y]
   "Applies a watermark-image onto the base-image at coordinates (x, y)."
@@ -47,6 +46,53 @@
     (save-image watermarked-image "/tmp/WATERMARKED_IMAGE.png")
     (println "Image with watermark saved!")))
 
+(defn encode-url [url]
+  (let [s-enc (.encodeToString (Base64/getEncoder) (.getBytes url))]
+    (println s-enc)))
+
+(defn decode-url [b64-url]
+  (new String (.decode (Base64/getDecoder) b64-url)))
+
+(defn- hex-to-bytes [hex-str]
+  (let [len (.length hex-str)]
+    (byte-array
+      (for [i (range 0 len 2)]
+        (unchecked-byte (Integer/parseInt (subs hex-str i (+ i 2)) 16))))))
+
+
+;; --- Main application code ---
+
+(defroutes app
+  (GET "/" [] "<h1>Hello, world</h1>")
+  ;; A new route to handle the base64 encoded URL
+  (GET "/image/:b64-url" [b64-url]
+    (try
+      (let [decoded-url (decode-url b64-url)]
+        (println "Received request for image at:" decoded-url)
+        (wm-image decoded-url "https://placehold.co/200x50/FFFFFF/000000?text=Watermark")
+        "Image processing started.")
+      (catch Exception e
+        (str "Error processing request: " (.getMessage e)))))
+  (route/not-found "<h1>Page not found</h1>"))
+
+(defn start-server []
+  "Starts the HTTP server and stores the instance in the server-instance atom."
+  (when-not @server-instance
+    (let [s (server/run-server app {:port 9000})]
+      (reset! server-instance s)
+      (println "Server started on port 9000."))))
+
+(defn stop-server []
+  "Stops the HTTP server if it is running."
+  (when-let [s @server-instance]
+    (server/server-stop! s)
+    (reset! server-instance nil)
+    (println "Server stopped.")))
+
+(defn -main []
+  (println "Starting the server...")
+  (start-server))
+
 (def object_key "Counting in 5s cards to 50 x7 colours Starfish AL.pdf_006.jpg")
 (def s3_storage_name "jl-resources")
 (def s3_prefix "dev")
@@ -55,13 +101,34 @@
   (let [url-string (apply str "s3://" s3_storage_name "/" s3_prefix "/" object_key)]
     url-string))
 
-(defn encode-url [url]
-  (let [s-enc (.encodeToString (Base64/getEncoder) (.getBytes url))]
-    (println s-enc)))
 
-(defn decode-url [b64-url]
-  (new String (.decode (Base64/getDecoder) b64-url)))
+(defn- grab-environment
+  []
+  {:imgproxy-key (System/getenv "IMGPROXY_KEY")
+   :imgproxy-salt (System/getenv "IMGPROXY_SALT")
+   :imgproxy-baseurl (System/getenv "IMGPROXY_BASE_URL")
+   :imgproxy-bind (System/getenv "IMGPROXY_BIND")
+   :imgproxy-region (System/getenv "IMGPROXY_REGION")
+   :imgproxy-s3-endpoint (System/getenv "IMGPROXY_S3_ENDPONT")
+   :imgproxy-timeout (System/getenv "IMGPROXY_TIMEOUT")
+   :imgproxy-use-etag (System/getenv "IMGPROXY_USE_ETAG")
+   :imgproxy-use-s3 (System/getenv "IMGPROXY_USE_S3")})
 
+#_(defn sign-path [path-to-sign key-hex salt-hex]
+  (let [key-bytes (hex-to-bytes key-hex)
+        salt-bytes (hex-to-bytes salt-hex)
+        path-bytes (.getBytes path-to-sign "UTF-8")
+        mac (javax.crypto.Mac/getInstance "HmacSHA256")
+        key (new javax.crypto.spec.SecretKeySpec key-bytes "HmacSHA256")]
+    (.init mac key)
+    (.update mac salt-bytes)
+    (.update mac path-bytes)
+    (let [digest (.doFinal mac)
+          encoded-digest (clojure.string/replace
+                           (java.util.Base64/getUrlEncoder)
+                           (java.util.Base64/encodeToString digest)
+                           "=" "")]
+      encoded-digest)))
 
 (comment
   (defn report-image-size [img-url]
@@ -69,4 +136,4 @@
       (if image
         (println "Successfully read image with dimensions:"
                  (.getWidth image) "x" (.getHeight image)))))
-  )
+)
