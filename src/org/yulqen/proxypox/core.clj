@@ -76,15 +76,17 @@
         (str "Error processing request: " (.getMessage e)))))
   (route/not-found "<h1>Page not found</h1>"))
 
-(defn start-server []
+(defn start-server
   "Starts the HTTP server and stores the instance in the server-instance atom."
+  []
   (when-not @server-instance
     (let [s (server/run-server app {:port 9000})]
       (reset! server-instance s)
       (println "Server started on port 9000."))))
 
-(defn stop-server []
+(defn stop-server
   "Stop the http server gracefully."
+  []
   (when-not (nil? @server-instance)
     ;; graceful shutdown: wait 100ms for existing requests to be finished
     ;; :timeout is optional, when no timeout, stop immediately
