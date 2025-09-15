@@ -10,6 +10,7 @@
 (import '[java.io File])
 (import '[java.util Base64])
 (import '[javax.crypto Mac])
+(import java.nio.charset.StandardCharsets)
 
 ;; This atom will hold the server instance so we can start and stop it.
 ;; `defonce` ensures it's only defined once, which is good for REPL usage.
@@ -57,12 +58,17 @@
     (save-image watermarked-image "/tmp/WATERMARKED_IMAGE.png")
     (println "Image with watermark saved!")))
 
-(defn encode-url [url]
-  (let [s-enc (.encodeToString (Base64/getEncoder) (.getBytes url))]
-    (println s-enc)))
+(defn encode-url
+  "Encodes a URL using URL-safe Base64 without padding."
+  [url]
+  (let [encoder (-> (Base64/getUrlEncoder) (.withoutPadding))]
+    (.encodeToString encoder (.getBytes url java.nio.charset.StandardCharsets/UTF_8))))
 
-(defn decode-url [b64-url]
-  (new String (.decode (Base64/getDecoder) b64-url)))
+(defn decode-url
+  "Decodes a URL-safe Base64 string (with or without padding)."
+  [b64-url]
+  (let [decoder (Base64/getUrlDecoder)]
+    (String. (.decode decoder b64-url) java.nio.charset.StandardCharsets/UTF_8)))
 
 (defn- hex-to-bytes [hex-str]
   (let [len (.length hex-str)]
@@ -162,10 +168,12 @@
                            "=" "")]
       encoded-digest)))
 
+
+
 (comment
   (defn report-image-size [img-url]
     (let [image (read-image-from-url img-url)]
       (if image
         (println "Successfully read image with dimensions:"
                  (.getWidth image) "x" (.getHeight image)))))
-)
+  )
