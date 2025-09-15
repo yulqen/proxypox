@@ -140,17 +140,7 @@
     url-string))
 
 
-(defn- grab-environment
-  []
-  {:imgproxy-key (System/getenv "IMGPROXY_KEY")
-   :imgproxy-salt (System/getenv "IMGPROXY_SALT")
-   :imgproxy-baseurl (System/getenv "IMGPROXY_BASE_URL")
-   :imgproxy-bind (System/getenv "IMGPROXY_BIND")
-   :imgproxy-region (System/getenv "IMGPROXY_REGION")
-   :imgproxy-s3-endpoint (System/getenv "IMGPROXY_S3_ENDPONT")
-   :imgproxy-timeout (System/getenv "IMGPROXY_TIMEOUT")
-   :imgproxy-use-etag (System/getenv "IMGPROXY_USE_ETAG")
-   :imgproxy-use-s3 (System/getenv "IMGPROXY_USE_S3")})
+
 
 #_(defn sign-path [path-to-sign key-hex salt-hex]
   (let [key-bytes (hex-to-bytes key-hex)

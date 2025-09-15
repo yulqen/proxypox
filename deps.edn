@@ -1,5 +1,8 @@
 {:paths ["src"]
  :deps {org.clojure/clojure {:mvn/version "1.12.0"}
         http-kit/http-kit {:mvn/version "2.9.0-beta2"}
-        compojure/compojure {:mvn/version "1.7.1"}}
+        compojure/compojure {:mvn/version "1.7.1"}
+        com.cognitect.aws/api       {:mvn/version "0.8.774"}
+        com.cognitect.aws/endpoints {:mvn/version "871.2.33.5"}
+        com.cognitect.aws/s3        {:mvn/version "871.2.33.5"}}
  }
