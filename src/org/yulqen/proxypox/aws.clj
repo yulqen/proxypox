@@ -34,7 +34,7 @@
 
 
 (defn fetch-image-from-spaces
-  "Fetches an object from DO Spaces and returns its InputStream."  
+  "Fetches an object from DO Spaces and returns its InputStream."
   [bucket-name object-key]
   (let [response (aws/invoke s3-client
                              {:op      :GetObject
@@ -49,4 +49,4 @@
 ; eval this...
 (defn get-key-from-s3 [image-key]
   (let [full-key (get-full-key image-key)]
-    (fetch-image-from-spaces "jl-resources" full-key)))
+    (fetch-image-from-spaces (:aws-bucket-name (grab-environment)) full-key)))
