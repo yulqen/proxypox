@@ -35,26 +35,14 @@
         (unchecked-byte (Integer/parseInt (subs hex-str i (+ i 2)) 16))))))
 
 (defn test-string-concat []
-  (let [url-string (apply str "s3://" s3_storage_name "/" s3_prefix "/" object_key)]
+  (let [url-string (apply str "s3://" (:aws-bucket-name (grab-environment))
+                          "/"
+                          "dev"
+                          "/"
+                          "Counting in 5s cards to 50 x7 colours Starfish AL.pdf_006.jpg")]
     url-string))
 
-(defn sign-path [path-to-sign key-hex salt-hex]
-  (let [key-bytes (hex-to-bytes key-hex)
-        salt-bytes (hex-to-bytes salt-hex)
-        path-bytes (.getBytes path-to-sign "UTF-8")
-        mac (javax.crypto.Mac/getInstance "HmacSHA256")
-        key (new javax.crypto.spec.SecretKeySpec key-bytes "HmacSHA256")]
-    (.init mac key)
-    (.update mac salt-bytes)
-    (.update mac path-bytes)
-    (let [digest (.doFinal mac)
-          encoded-digest (clojure.string/replace
-                          (java.util.Base64/getUrlEncoder)
-                          (java.util.Base64/encodeToString digest)
-                          "=" "")]
-      encoded-digest)))
-
-(comment
+#_(comment
   (defn report-image-size [img-url]
     (let [image (image/read-image-from-url img-url)]
       (if image

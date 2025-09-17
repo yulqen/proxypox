@@ -21,15 +21,6 @@
   (GET "/test" [] "<h2>This is a test page</h2>")
   (GET "/image/:b64-url" [b64-url]
     (try
-      (let [decoded-url (utils/decode-url b64-url)]
-        (println "Received request for image at:" decoded-url)
-        (image/wm-image decoded-url "https://alphabetlearning.online/static/images/AL_long_logo_black_grey_750.1ec1231fe406.png")
-        "Image processing started.")
-      (catch Exception e
-        (str "Error processing request: " (.getMessage e)))))
-  
-  (GET "/image2/:b64-url" [b64-url]
-    (try
       (let [decoded-url (utils/decode-url b64-url)
             image-bytes (image/just-image decoded-url "https://alphabetlearning.online/static/images/AL_long_logo_black_grey_750.1ec1231fe406.png")]
         (if image-bytes
@@ -66,16 +57,3 @@
 (defn -main []
   (println "Starting the server...")
   (start-server))
-
-(def object_key "Counting in 5s cards to 50 x7 colours Starfish AL.pdf_006.jpg")
-(def s3_storage_name "jl-resources")
-(def s3_prefix "dev")
-
-
-
-
-
-
-
-
-
