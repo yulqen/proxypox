@@ -2,13 +2,11 @@
   (:require [org.httpkit.client :as http]
             [org.httpkit.server :as server]
             [compojure.core :refer [defroutes GET]] ; Corrected the syntax for Compojure
-            [compojure.route :as route]))
+            [compojure.route :as route]
+            [org.yulqen.proxypox.image :as image]
+            [org.yulqen.proxypox.utils :as utils]))
 
-(import '[javax.imageio ImageIO])
-(import '[java.io ByteArrayInputStream ByteArrayOutputStream])
-(import '[java.awt Graphics2D AlphaComposite])
-(import '[java.io File])
-(import '[java.util Base64])
+
 (import '[javax.crypto Mac])
 (import java.nio.charset.StandardCharsets)
 
@@ -16,86 +14,24 @@
 ;; `defonce` ensures it's only defined once, which is good for REPL usage.
 (defonce server-instance (atom nil))
 
-;; --- Helper functions for image processing, placed before the app definition ---
-
-(defn read-image-from-url [url]
-  (let [response @(http/get url {:as :byte-array})]
-    (if-let [err (:error response)]
-      (println "HTTP request failed:" err)
-      (if (= 200 (:status response))
-        (let [image-data (:body response)]
-          (ImageIO/read (ByteArrayInputStream. image-data)))
-        (println "Request returned non-200 status:" (:status response))))))
-
-(defn apply-watermark [base-image watermark-image x y]
-  "Applies a watermark-image onto the base-image at coordinates (x, y)."
-  (let [g2d (.createGraphics base-image)
-        watermark-width (.getWidth watermark-image)
-        watermark-height (.getHeight watermark-image)]
-    (.setComposite g2d (AlphaComposite/getInstance AlphaComposite/SRC_OVER (float 0.5)))
-    (.drawImage g2d watermark-image x y nil)
-    (.dispose g2d)
-    base-image))
-
-(defn save-image [image filename]
-  (ImageIO/write image "png" (File. filename)))
-
-(defn- just-image
-  "Reads base and watermark images from URLs, applies the watermark, and returns the result as a byte array."
-  [base watermark]
-  (let [base-image (read-image-from-url base)
-        watermark-image (read-image-from-url watermark)]
-    (when (and base-image watermark-image)
-      (let [watermarked-image (apply-watermark base-image watermark-image 0 0)
-            baos (ByteArrayOutputStream.)]
-        (ImageIO/write watermarked-image "png" baos)
-        (.toByteArray baos)))))
-
-(defn wm-image [base watermark]
-  (let [base-image (read-image-from-url base)
-        watermark-image (read-image-from-url watermark)
-        watermarked-image (apply-watermark base-image watermark-image 0 0)]
-    (save-image watermarked-image "/tmp/WATERMARKED_IMAGE.png")
-    (println "Image with watermark saved!")))
-
-(defn encode-url
-  "Encodes a URL using URL-safe Base64 without padding."
-  [url]
-  (let [encoder (-> (Base64/getUrlEncoder) (.withoutPadding))]
-    (.encodeToString encoder (.getBytes url java.nio.charset.StandardCharsets/UTF_8))))
-
-(defn decode-url
-  "Decodes a URL-safe Base64 string (with or without padding)."
-  [b64-url]
-  (let [decoder (Base64/getUrlDecoder)]
-    (String. (.decode decoder b64-url) java.nio.charset.StandardCharsets/UTF_8)))
-
-(defn- hex-to-bytes [hex-str]
-  (let [len (.length hex-str)]
-    (byte-array
-      (for [i (range 0 len 2)]
-        (unchecked-byte (Integer/parseInt (subs hex-str i (+ i 2)) 16))))))
-
-
 ;; --- Main application code ---
 
 (defroutes app
   (GET "/" [] "<h1>Hello, world</h1>")
-  
-  ;; A new route to handle the base64 encoded URL
+  (GET "/test" [] "<h2>This is a test page</h2>")
   (GET "/image/:b64-url" [b64-url]
     (try
-      (let [decoded-url (decode-url b64-url)]
+      (let [decoded-url (utils/decode-url b64-url)]
         (println "Received request for image at:" decoded-url)
-        (wm-image decoded-url "https://alphabetlearning.online/static/images/AL_long_logo_black_grey_750.1ec1231fe406.png")
+        (image/wm-image decoded-url "https://alphabetlearning.online/static/images/AL_long_logo_black_grey_750.1ec1231fe406.png")
         "Image processing started.")
       (catch Exception e
         (str "Error processing request: " (.getMessage e)))))
   
   (GET "/image2/:b64-url" [b64-url]
     (try
-      (let [decoded-url (decode-url b64-url)
-            image-bytes (just-image decoded-url "https://alphabetlearning.online/static/images/AL_long_logo_black_grey_750.1ec1231fe406.png")]
+      (let [decoded-url (utils/decode-url b64-url)
+            image-bytes (image/just-image decoded-url "https://alphabetlearning.online/static/images/AL_long_logo_black_grey_750.1ec1231fe406.png")]
         (if image-bytes
           {:status 200
            :headers {"Content-Type" "image/png"}
@@ -135,35 +71,11 @@
 (def s3_storage_name "jl-resources")
 (def s3_prefix "dev")
 
-(defn test-string-concat []
-  (let [url-string (apply str "s3://" s3_storage_name "/" s3_prefix "/" object_key)]
-    url-string))
 
 
 
 
-#_(defn sign-path [path-to-sign key-hex salt-hex]
-  (let [key-bytes (hex-to-bytes key-hex)
-        salt-bytes (hex-to-bytes salt-hex)
-        path-bytes (.getBytes path-to-sign "UTF-8")
-        mac (javax.crypto.Mac/getInstance "HmacSHA256")
-        key (new javax.crypto.spec.SecretKeySpec key-bytes "HmacSHA256")]
-    (.init mac key)
-    (.update mac salt-bytes)
-    (.update mac path-bytes)
-    (let [digest (.doFinal mac)
-          encoded-digest (clojure.string/replace
-                           (java.util.Base64/getUrlEncoder)
-                           (java.util.Base64/encodeToString digest)
-                           "=" "")]
-      encoded-digest)))
 
 
 
-(comment
-  (defn report-image-size [img-url]
-    (let [image (read-image-from-url img-url)]
-      (if image
-        (println "Successfully read image with dimensions:"
-                 (.getWidth image) "x" (.getHeight image)))))
-  )
+
