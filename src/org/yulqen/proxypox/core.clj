@@ -6,7 +6,6 @@
             [org.yulqen.proxypox.image :as image]
             [org.yulqen.proxypox.utils :as utils]))
 
-
 (import '[javax.crypto Mac])
 (import java.nio.charset.StandardCharsets)
 
@@ -14,15 +13,28 @@
 ;; `defonce` ensures it's only defined once, which is good for REPL usage.
 (defonce server-instance (atom nil))
 
-;; --- Main application code ---
-
 (defroutes app
   (GET "/" [] "<h1>Hello, world</h1>")
   (GET "/test" [] "<h2>This is a test page</h2>")
+  (GET "/watermark-from-file/:b64-url" [b64-url]
+    (try
+      (let [decoded-url (utils/decode-url b64-url)
+            watermark-path "AL_text_only.png"
+            image-bytes (image/just-image-from-watermark-file decoded-url watermark-path)]
+        (if image-bytes
+          {:status 200
+           :headers {"Content-Type" "image/png"}
+           :body image-bytes}
+          {:status 404
+           :body "Image not found or could not be processed."}))
+      (catch Exception e
+        {:status 500
+         :body (str "Error processing request: " (.getMessage e))})))
   (GET "/image/:b64-url" [b64-url]
     (try
       (let [decoded-url (utils/decode-url b64-url)
-            image-bytes (image/just-image decoded-url "https://alphabetlearning.online/static/images/AL_long_logo_black_grey_750.1ec1231fe406.png")]
+            watermark-url "https://alphabetlearning.online/static/images/AL_long_logo_black_grey_750.1ec1231fe406.png"
+            image-bytes (image/just-image decoded-url watermark-url)]
         (if image-bytes
           {:status 200
            :headers {"Content-Type" "image/png"}
