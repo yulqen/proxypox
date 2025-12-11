@@ -18,7 +18,6 @@
 (defn get-full-key [object-key]
   (str s3-path-prefix object-key))
 
-
 (defn fetch-image-from-spaces
   "Fetches an object from DO Spaces and returns its InputStream."
   [bucket-name object-key]
