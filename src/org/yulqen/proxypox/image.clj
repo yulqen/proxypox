@@ -1,11 +1,9 @@
 (ns org.yulqen.proxypox.image
-  (:require [org.httpkit.client :as http])
-  (:require [clojure.java.io :as io]))
-
-(import '[javax.imageio ImageIO])
-(import '[java.io ByteArrayInputStream ByteArrayOutputStream])
-(import '[java.awt Graphics2D AlphaComposite])
-(import '[java.io File])
+  (:require [org.httpkit.client :as http]
+            [clojure.java.io :as io])
+  (:import [javax.imageio ImageIO]
+           [java.io ByteArrayInputStream ByteArrayOutputStream]
+           [java.awt AlphaComposite]))
 
 (defn read-image-from-file
   "Reads a file to bytes."
@@ -27,9 +25,7 @@
 (defn apply-watermark
   "Applies a watermark-image onto the base-image at coordinates (x, y)."  
   [base-image watermark-image x y]
-  (let [g2d (.createGraphics base-image)
-        watermark-width (.getWidth watermark-image)
-        watermark-height (.getHeight watermark-image)]
+  (let [g2d (.createGraphics base-image)]
     (.setComposite g2d (AlphaComposite/getInstance AlphaComposite/SRC_OVER (float 0.5)))
     (.drawImage g2d watermark-image x y nil)
     (.dispose g2d)

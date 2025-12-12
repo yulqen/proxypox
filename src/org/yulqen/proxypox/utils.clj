@@ -16,7 +16,7 @@
    :imgproxy-use-etag (System/getenv "IMGPROXY_USE_ETAG")
    :imgproxy-use-s3 (System/getenv "IMGPROXY_USE_S3")})
 
-(defn encode-url
+#_(defn encode-url
   "Encodes a URL using URL-safe Base64 without padding."
   [url]
   (let [encoder (-> (Base64/getUrlEncoder) (.withoutPadding))]
@@ -28,13 +28,13 @@
   (let [decoder (Base64/getUrlDecoder)]
     (String. (.decode decoder b64-url) java.nio.charset.StandardCharsets/UTF_8)))
 
-(defn- hex-to-bytes [hex-str]
+#_(defn- hex-to-bytes [hex-str]
   (let [len (.length hex-str)]
     (byte-array
       (for [i (range 0 len 2)]
         (unchecked-byte (Integer/parseInt (subs hex-str i (+ i 2)) 16))))))
 
-(defn test-string-concat []
+#_(defn test-string-concat []
   (let [url-string (apply str "s3://" (:aws-bucket-name (grab-environment))
                           "/"
                           "dev"

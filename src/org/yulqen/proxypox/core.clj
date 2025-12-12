@@ -6,21 +6,23 @@
             [org.yulqen.proxypox.image :as image]
             [org.yulqen.proxypox.utils :as utils]))
 
-(import '[javax.crypto Mac])
-(import java.nio.charset.StandardCharsets)
 
 ;; This atom will hold the server instance so we can start and stop it.
 ;; `defonce` ensures it's only defined once, which is good for REPL usage.
 (defonce server-instance (atom nil))
 
 (defroutes app
-  (GET "/" [] "<h1>Hello, world - yabba dabba doo!</h1>")
+  (GET "/" [] "<h1>Hello, world - yabba dabba!</h1>")
+  (GET "/nobs" [] "There are nobs on the moon.")
   (GET "/test" [] "<h2>This is a test page</h2>")
   (GET "/watermark-from-file/:b64-url" [b64-url]
     (try
       (let [decoded-url (utils/decode-url b64-url)
             watermark-path "AL_text_only.png"
             image-bytes (image/just-image-from-watermark-file decoded-url watermark-path)]
+        (println decoded-url)
+        (println watermark-path)
+        (println image-bytes)
         (if image-bytes
           {:status 200
            :headers {"Content-Type" "image/png"}

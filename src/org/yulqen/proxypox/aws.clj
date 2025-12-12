@@ -1,7 +1,7 @@
 (ns org.yulqen.proxypox.aws
-  (:require [cognitect.aws.client.api :as aws]
-            [cognitect.aws.credentials :as credentials]
-            [org.yulqen.proxypox.utils :as utils]))
+  (:require
+   [cognitect.aws.client.api :as aws]
+   [org.yulqen.proxypox.utils :as utils]))
 
 ; endpoint: https://jl-resources.ams3.digitaloceanspaces.com/dev_thumbnails/Alphabet%20Letters%20Initial%20Sound%20Match%20Order%20Hh%20Cover%20Image.jpg
 
