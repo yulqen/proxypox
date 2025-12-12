@@ -14,7 +14,7 @@
 (defonce server-instance (atom nil))
 
 (defroutes app
-  (GET "/" [] "<h1>Hello, world</h1>")
+  (GET "/" [] "<h1>Hello, world - yabba dabba doo!</h1>")
   (GET "/test" [] "<h2>This is a test page</h2>")
   (GET "/watermark-from-file/:b64-url" [b64-url]
     (try
@@ -51,7 +51,7 @@
   "Starts the HTTP server and stores the instance in the server-instance atom."
   []
   (when-not @server-instance
-    (let [s (server/run-server app {:port 9000})]
+    (let [s (server/run-server #'app {:port 9000})]
       (reset! server-instance s)
       (println "Server started on port 9000."))))
 
@@ -69,3 +69,6 @@
 (defn -main []
   (println "Starting the server...")
   (start-server))
+
+(comment
+  (stop-server))
