@@ -1,15 +1,15 @@
 (ns org.yulqen.proxypox.image-simple
   (:require [clojure.string :as str])
-  (:import
-     ;; For handling image data in memory
-     [java.awt.image BufferedImage]
-     ;; For drawing operations (resizing, watermarking)
-     [java.awt Graphics2D RenderingHints]
-     ;; For reading from and writing to files and URLs
-     [java.io File]
-     [java.net URL]
-     ;; The main Java Image I/O library
-     [javax.imageio ImageIO]))
+   (:import
+      ;; For handling image data in memory
+      [java.awt.image BufferedImage]
+      ;; For drawing operations (resizing, watermarking)
+      [java.awt Graphics2D RenderingHints AlphaComposite]
+      ;; For reading from and writing to files and URLs
+      [java.io File]
+      [java.net URL]
+      ;; The main Java Image I/O library
+      [javax.imageio ImageIO]))
 
 
 (defn fetch-image-from-url
@@ -93,10 +93,12 @@
   - `base-image`: The `BufferedImage` to which the watermark will be applied.
     This image is modified in-place.
   - `watermark-image`: The `BufferedImage` to use as the watermark.
+  - `watermark-alpha`: Alpha transparency value for watermark (0.0 to 1.0).
+    0.0 = fully transparent, 1.0 = fully opaque.
 
   Returns:
   - The modified `base-image` with the watermark drawn on it."
-  [base-image watermark-image]
+  [base-image watermark-image watermark-alpha]
   (let [base-width (.getWidth base-image)
         base-height (.getHeight base-image)
         resized-watermark-image (resize-image watermark-image 0.2)
@@ -108,6 +110,10 @@
         y (- base-height mark-height padding)
         ;; Get the Graphics2D object from the base image
         g (.createGraphics base-image)]
+
+     ;; Set composite for alpha transparency
+       (.setComposite g (AlphaComposite/getInstance AlphaComposite/SRC_OVER 
+                        watermark-alpha))
 
     ;; Draw the watermark image at the calculated position
     (.drawImage g resized-watermark-image x y nil)
@@ -148,11 +154,13 @@
   - `image-url`: The URL of the source image.
   - `watermark-path`: The local file path to the watermark image (PNG or JPG).
   - `output-path`: The local file path where the final processed image will be saved.
+  - `watermark-alpha`: Alpha transparency value for watermark (0.0 to 1.0).
+    0.0 = fully transparent, 1.0 = fully opaque.
 
   Returns:
   - `true` if the entire process completed successfully and the file was saved.
     An exception will be thrown if any step fails."
-  [image-url watermark-path output-path]
+  [image-url watermark-path output-path watermark-alpha]
   (println (str "Starting image processing for: " image-url))
   (let [;; 1. Fetch the main image from the URL
         original-img (fetch-image-from-url image-url)
@@ -160,8 +168,8 @@
         resized-img (resize-image original-img 0.5)
         ;; 3. Read the watermark image from the local file system
         watermark-img (read-image-from-file watermark-path)
-        ;; 4. Apply the watermark onto the resized image
-        final-img (apply-watermark resized-img watermark-img)
+        ;; 4. Apply the watermark onto the resized image with alpha transparency
+        final-img (apply-watermark resized-img watermark-img watermark-alpha)
         ;; 5. Save the final image to the specified output path
         success (save-image final-img output-path)]
     (if success
@@ -176,8 +184,9 @@
 ;;
 (comment
   (def source-url "https://yulqen.org/img/poser_guy.png")
-  (def my-watermark "/home/lemon/Pictures/RAW/2024-10-27-tyninghame/_build/static/leaflet/images/marker-icon-2x.png") ; <-- CHANGE THIS
+  (def my-watermark "AL_text_only.png") ; <-- CHANGE THIS
   (def output-file "/tmp/toss.png") ; <-- CHANGE THIS
 
-  ;; Run the entire process
-  (process-image! source-url my-watermark output-file))
+   ;; Example with alpha transparency
+   (process-image! source-url my-watermark output-file 0.5)
+   )
