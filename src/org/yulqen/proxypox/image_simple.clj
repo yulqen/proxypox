@@ -162,7 +162,6 @@
     An exception will be thrown if any step fails."
   [{:keys [image-url watermark-path output-path watermark-alpha]
     :or {watermark-alpha 0.5}}]
-  [image-url watermark-path output-path watermark-alpha]
   (println (str "Starting image processing for: " image-url))
   (let [;; 1. Fetch the main image from the URL
         original-img (fetch-image-from-url image-url)
