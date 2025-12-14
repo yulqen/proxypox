@@ -4,7 +4,7 @@
       ;; For handling image data in memory
       [java.awt.image BufferedImage]
       ;; For drawing operations (resizing, watermarking)
-      [java.awt Graphics2D RenderingHints AlphaComposite]
+      [java.awt RenderingHints AlphaComposite]
       ;; For reading from and writing to files and URLs
       [java.io File]
       [java.net URL]
@@ -160,6 +160,8 @@
   Returns:
   - `true` if the entire process completed successfully and the file was saved.
     An exception will be thrown if any step fails."
+  [{:keys [image-url watermark-path output-path watermark-alpha]
+    :or {watermark-alpha 0.5}}]
   [image-url watermark-path output-path watermark-alpha]
   (println (str "Starting image processing for: " image-url))
   (let [;; 1. Fetch the main image from the URL
@@ -188,5 +190,8 @@
   (def output-file "/tmp/toss.png") ; <-- CHANGE THIS
 
    ;; Example with alpha transparency
-   (process-image! source-url my-watermark output-file 0.5)
+   (process-image! {:image-url source-url
+                    :watermark-path my-watermark
+                    :output-path output-file
+                    :watermark-alpha 1.0})
    )
